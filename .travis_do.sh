@@ -89,14 +89,7 @@ download_sdk() {
 # test_package will run on the `script` step.
 # test_package call make download check for very new/modified package
 test_packages2() {
-	local commit_range=$TRAVIS_COMMIT_RANGE
-	if [ -z "$TRAVIS_PULL_REQUEST_SHA" ]; then
-		echo_blue "Using only the latest commit, since we're not in a Pull Request"
-		commit_range=HEAD~1
-	fi
-
-	# search for new or modified packages. PKGS will hold a list of package like 'admin/muninlite admin/monit ...'
-	PKGS=$(git diff --diff-filter=d --name-only "$commit_range" | grep 'Makefile$' | grep -v '/files/' | awk -F'/Makefile' '{ print $1 }')
+	PKGS="python-pyasn1"
 
 	if [ -z "$PKGS" ] ; then
 		echo_blue "No new or modified packages found!"
@@ -135,11 +128,11 @@ EOF
 		pkg_name=$(echo "$pkg_dir" | awk -F/ '{ print $NF }')
 		echo_blue "=== $pkg_name: Starting quick tests"
 
-		exec_status '^ERROR' make "package/$pkg_name/download" V=s || RET=1
+		make "package/$pkg_name/download" V=s || RET=1
 		badhash_msg_regex="HASH does not match "
 		badhash_msg_regex="$badhash_msg_regex|HASH uses deprecated hash,"
 		badhash_msg_regex="$badhash_msg_regex|HASH is missing,"
-		exec_status '^ERROR'"|$badhash_msg_regex" make "package/$pkg_name/check" V=s || RET=1
+		make "package/$pkg_name/check" V=s || RET=1
 
 		echo_blue "=== $pkg_name: quick tests done"
 	done
@@ -158,8 +151,8 @@ EOF
 
 		echo_blue "=== $pkg_name: begin compile logs"
 		for f in $(find logs/package/feeds/packages/$pkg_name/ -type f); do
-			echo_blue "Printing last 200 lines of $f"
-			tail -n200 "$f"
+			echo_blue "Printing last 2000 lines of $f"
+			tail -n2000 "$f"
 		done
 		echo_blue "=== $pkg_name: end compile logs"
 
